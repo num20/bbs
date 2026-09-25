@@ -4,6 +4,7 @@
 [![publish-chart](https://github.com/num20/bbs/actions/workflows/publish-chart.yml/badge.svg)](https://github.com/num20/bbs/actions/workflows/publish-chart.yml)
 ![Node.js](https://img.shields.io/badge/Node.js-%3E%3D24-5FA04E?logo=nodedotjs&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-%3E%3D1.29-326CE5?logo=kubernetes&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 昔ながらの見た目のスレッド式 BBS（電子掲示板）です。
 
@@ -135,6 +136,7 @@ BBS_TITLE='おスコーン愛好会' npm start
 .
 ├── package.json        # npm workspaces（server / client）
 ├── Dockerfile
+├── LICENSE
 ├── compose.yaml
 ├── .env.example
 ├── .github/workflows/  # イメージとチャートの公開（手動実行）
@@ -157,3 +159,7 @@ BBS_TITLE='おスコーン愛好会' npm start
         ├── format.js
         └── style.css
 ```
+
+## ライセンス
+
+[MIT](LICENSE)

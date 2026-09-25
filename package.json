@@ -1,6 +1,7 @@
 {
   "name": "bbs",
   "private": true,
+  "license": "MIT",
   "workspaces": [
     "server",
     "client"
