@@ -49,7 +49,7 @@ export default function App() {
           <a href="#/">■掲示板に戻る■</a>
         </p>
         <p className="small">
-          powered by React + fastify + SQLite3 ／ 推奨環境：Netscape Navigator 4.x 以上・800×600
+          powered by React + Hono + SQLite3 ／ 推奨環境：Netscape Navigator 4.x 以上・800×600
         </p>
       </div>
     </>
