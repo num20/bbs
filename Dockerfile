@@ -1,5 +1,5 @@
-# ---- クライアントのビルド ----
-FROM node:24-slim AS build
+# ---- クライアントのビルド（静的ファイルなのでビルド環境のアーキテクチャで実行） ----
+FROM --platform=$BUILDPLATFORM node:24-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/

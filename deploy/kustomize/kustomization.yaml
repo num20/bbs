@@ -1,4 +1,4 @@
-# kubectl apply -k k8s で適用します
+# kubectl apply -k deploy/kustomize で適用します
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -9,10 +9,10 @@ resources:
   - statefulset.yaml
   - service.yaml
 
-# アプリのイメージ（クラスターから取得できる場所にプッシュして書き換えてください）
+# アプリのイメージ（GitHub Actions の publish-image で ghcr.io に公開）
 images:
   - name: bbs
-    newName: bbs
+    newName: ghcr.io/num20/bbs
     newTag: latest
 
 configMapGenerator:

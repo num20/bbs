@@ -1,0 +1,13 @@
+apiVersion: v2
+name: bbs
+description: 昔ながらの見た目のスレッド式 BBS（SQLite + Litestream）
+type: application
+# チャートのバージョン（変更したら上げる）
+version: 0.1.0
+# 既定で使うイメージのタグ
+appVersion: "0.1.0"
+# Litestream のサイドカーに restartPolicy: Always の initContainer を使うため
+kubeVersion: ">=1.29.0-0"
+home: https://github.com/num20/bbs
+sources:
+  - https://github.com/num20/bbs

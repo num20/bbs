@@ -50,7 +50,7 @@ http://localhost:3000 で開けます。データは名前付きボリューム 
 
 ## Kubernetes で起動
 
-`k8s/` に Kustomize 形式のマニフェストがあります。SQLite は 1 プロセスからしか書き込めないため、StatefulSet の 1 レプリカで動かし、[Litestream](https://litestream.io/) で DB を S3（または S3 互換ストレージ）へ常時レプリケートします。
+`deploy/` に Helm チャートと Kustomize のマニフェストがあります。SQLite は 1 プロセスからしか書き込めないため、StatefulSet の 1 レプリカで動かし、[Litestream](https://litestream.io/) で DB を S3（または S3 互換ストレージ）へ常時レプリケートします。
 
 - `restore`（initContainer）: PVC に DB がなく S3 にレプリカがあれば復元
 - `litestream`（サイドカー）: WAL を監視して S3 へ送信
@@ -58,15 +58,27 @@ http://localhost:3000 で開けます。データは名前付きボリューム 
 
 Kubernetes 1.29 以降（サイドカー用の `restartPolicy: Always` を使用）と、S3 のバケットが必要です。
 
+### Helm
+
 ```sh
-# イメージをビルドしてクラスターから取得できるレジストリへプッシュ
-docker build -t <registry>/bbs:latest .
-docker push <registry>/bbs:latest
+helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.0 \
+  --namespace bbs --create-namespace \
+  --set litestream.s3.bucket=<バケット名> \
+  --set litestream.s3.accessKeyId=<アクセスキー> \
+  --set litestream.s3.secretAccessKey=<シークレットキー>
 
-cp k8s/secret.env.example k8s/secret.env   # ソルトと S3 の認証情報を記入
-# k8s/config.env のバケット名などと、k8s/kustomization.yaml の images を編集
+kubectl -n bbs port-forward svc/bbs 3000:80
+```
 
-kubectl apply -k k8s
+設定できる値は `deploy/helm/bbs/values.yaml` を参照してください。`bbs.salt` を指定しない場合は初回インストール時にランダムに生成され、以降のアップグレードでも同じ値が使われます。ローカルのチャートを使う場合は `oci://...` の代わりに `deploy/helm/bbs` を指定します。
+
+### Kustomize
+
+```sh
+cp deploy/kustomize/secret.env.example deploy/kustomize/secret.env   # ソルトと S3 の認証情報を記入
+# deploy/kustomize/config.env のバケット名などを編集
+
+kubectl apply -k deploy/kustomize
 kubectl -n bbs port-forward svc/bbs 3000:80
 ```
 
@@ -76,6 +88,19 @@ PVC を削除してもデータが戻ることを確認するには:
 kubectl -n bbs delete pvc --wait=false data-bbs-0
 kubectl -n bbs delete pod bbs-0
 ```
+
+## イメージとチャートの公開
+
+GitHub Actions の「Actions」タブから手動で実行します。
+
+| ワークフロー | 公開先 | 内容 |
+|---|---|---|
+| `publish-image` | `ghcr.io/num20/bbs` | 入力したバージョン（例: `0.1.0`）でイメージをビルド（linux/amd64, linux/arm64）。タグは `0.1.0` / `0.1` / `latest`（任意）/ `sha-xxxxxxx` |
+| `publish-chart` | `oci://ghcr.io/num20/charts/bbs` | `deploy/helm/bbs/Chart.yaml` の `version` でチャートを公開 |
+
+チャートを公開する前に、`Chart.yaml` の `appVersion` と同じバージョンのイメージを `publish-image` で公開しておいてください（`publish-chart` はイメージがない場合と、同じバージョンのチャートが公開済みの場合に失敗します）。
+
+初めて公開したパッケージは非公開になります。認証なしで取得できるようにするには、GitHub のパッケージの設定（Package settings → Change visibility）で公開に変更してください。
 
 ## 環境変数
 
@@ -120,7 +145,10 @@ BBS_TITLE='おスコーン愛好会' npm start
 ├── Dockerfile
 ├── compose.yaml
 ├── .env.example
-├── k8s/                # Kubernetes マニフェスト（Kustomize + Litestream）
+├── .github/workflows/  # イメージとチャートの公開（手動実行）
+├── deploy/
+│   ├── helm/bbs/       # Helm チャート
+│   └── kustomize/      # Kustomize のマニフェスト
 ├── server/
 │   └── src/
 │       ├── index.js    # fastify サーバーと API

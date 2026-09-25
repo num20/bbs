@@ -1,0 +1,24 @@
+{{- if .Values.litestream.enabled }}
+{{- with .Values.litestream.s3 }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bbs.fullname" $ }}-litestream
+  labels:
+    {{- include "bbs.labels" $ | nindent 4 }}
+data:
+  litestream.yml: |
+    addr: ":{{ $.Values.litestream.metrics.port }}"
+    dbs:
+      - path: /data/bbs.db
+        replica:
+          type: s3
+          bucket: {{ required "litestream.s3.bucket を指定してください" .bucket | quote }}
+          path: {{ .path | quote }}
+          region: {{ .region | quote }}
+          {{- with .endpoint }}
+          endpoint: {{ . | quote }}
+          {{- end }}
+          force-path-style: {{ .forcePathStyle }}
+{{- end }}
+{{- end }}

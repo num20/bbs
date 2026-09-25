@@ -1,0 +1,103 @@
+# SQLite は 1 プロセスからしか書き込めないため、レプリカ数は 1 固定です
+
+image:
+  repository: ghcr.io/num20/bbs
+  # 空なら Chart.yaml の appVersion
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+bbs:
+  # 掲示板名
+  title: なんでも掲示板＠あの頃
+  # トリップと ID の生成に使うソルト
+  #   空なら初回インストール時にランダム生成し、以降のアップグレードでは既存の値を使い続けます
+  salt: ""
+  # キー BBS_SALT を持つ既存の Secret を使う場合に指定（salt より優先）
+  existingSecret: ""
+
+litestream:
+  # 無効にすると PVC だけで動かします（PVC を失うとデータも失われます）
+  enabled: true
+  image:
+    repository: litestream/litestream
+    tag: 0.5.17
+    pullPolicy: IfNotPresent
+  # レプリケーション先（S3 または S3 互換ストレージ）
+  s3:
+    bucket: ""
+    path: bbs.db
+    region: us-east-1
+    # S3 互換ストレージを使う場合のみ指定
+    #   例: Cloudflare R2 → https://<account-id>.r2.cloudflarestorage.com（region は auto）
+    endpoint: ""
+    forcePathStyle: false
+    # 認証情報（IRSA や Workload Identity を使う場合は空のまま）
+    accessKeyId: ""
+    secretAccessKey: ""
+    # キー LITESTREAM_ACCESS_KEY_ID / LITESTREAM_SECRET_ACCESS_KEY を持つ既存の Secret を使う場合に指定
+    existingSecret: ""
+  metrics:
+    port: 9090
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+
+persistence:
+  size: 1Gi
+  # 空ならクラスターの既定の StorageClass
+  storageClass: ""
+
+serviceAccount:
+  create: true
+  # IRSA などで使う注釈（例: eks.amazonaws.com/role-arn）
+  annotations: {}
+  # 空なら fullname
+  name: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: bbs.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: bbs-tls
+  #    hosts:
+  #      - bbs.example.com
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+
+# node イメージの node ユーザー（UID 1000）に合わせる
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}

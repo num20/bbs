@@ -1,0 +1,56 @@
+# Helm チャートを oci://ghcr.io/<owner>/charts/bbs に公開する（Actions タブから手動で実行）
+# バージョンは deploy/helm/bbs/Chart.yaml の version / appVersion を使う
+name: publish-chart
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  CHART_DIR: deploy/helm/bbs
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: azure/setup-helm@v5
+        with:
+          version: v4.3.0
+
+      - name: ghcr.io にログイン
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "$GITHUB_TOKEN" | helm registry login ghcr.io -u "$ACTOR" --password-stdin
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+
+      - name: バージョンを確認
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          version=$(yq '.version' "$CHART_DIR/Chart.yaml")
+          app_version=$(yq '.appVersion' "$CHART_DIR/Chart.yaml")
+
+          # 同じバージョンのチャートを上書きしない
+          if helm show chart "oci://ghcr.io/$owner/charts/bbs" --version "$version" > /dev/null 2>&1; then
+            echo "::error::チャート bbs:$version は公開済みです。Chart.yaml の version を上げてください"
+            exit 1
+          fi
+
+          # appVersion のイメージが公開済みか
+          docker buildx imagetools inspect "ghcr.io/$owner/bbs:$app_version" > /dev/null \
+            || { echo "::error::イメージ ghcr.io/$owner/bbs:$app_version がありません。先に publish-image を実行してください"; exit 1; }
+
+          echo "OWNER=$owner" >> "$GITHUB_ENV"
+
+      - run: helm lint "$CHART_DIR"
+
+      - name: パッケージして公開
+        run: |
+          helm package "$CHART_DIR" --destination dist
+          helm push dist/bbs-*.tgz "oci://ghcr.io/$OWNER/charts"

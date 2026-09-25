@@ -1,0 +1,17 @@
+{{ .Values.bbs.title }} をデプロイしました。
+
+{{- if .Values.ingress.enabled }}
+
+  {{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}/
+  {{- end }}
+{{- else }}
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "bbs.fullname" . }} 3000:{{ .Values.service.port }}
+  → http://localhost:3000/
+{{- end }}
+
+{{- if not .Values.litestream.enabled }}
+
+注意: Litestream が無効です。PVC を失うとデータも失われます。
+{{- end }}

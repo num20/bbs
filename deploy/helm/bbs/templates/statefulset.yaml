@@ -1,0 +1,110 @@
+# 起動順: restore（S3 から復元）→ litestream（レプリケーション開始）→ bbs
+# 停止順: bbs → litestream（残りの WAL を送ってから終了）
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "bbs.fullname" . }}
+  labels:
+    {{- include "bbs.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ include "bbs.fullname" . }}
+  selector:
+    matchLabels:
+      {{- include "bbs.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "bbs.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "bbs.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.litestream.enabled }}
+      initContainers:
+        # PVC に DB がなく、S3 にレプリカがある場合だけ復元する
+        - name: restore
+          args: ["restore", "-if-db-not-exists", "-if-replica-exists", "/data/bbs.db"]
+          {{- include "bbs.litestreamContainer" . | nindent 10 }}
+        - name: litestream
+          args: ["replicate"]
+          restartPolicy: Always
+          {{- include "bbs.litestreamContainer" . | nindent 10 }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.litestream.metrics.port }}
+          resources:
+            {{- toYaml .Values.litestream.resources | nindent 12 }}
+      {{- end }}
+      containers:
+        - name: bbs
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: BBS_TITLE
+              value: {{ .Values.bbs.title | quote }}
+            - name: BBS_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bbs.saltSecretName" . }}
+                  key: BBS_SALT
+          ports:
+            - name: http
+              containerPort: 3000
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /api/config
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/config
+              port: http
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.litestream.enabled }}
+      volumes:
+        - name: litestream
+          configMap:
+            name: {{ include "bbs.fullname" . }}-litestream
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.persistence.storageClass }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}

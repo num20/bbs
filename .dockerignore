@@ -3,4 +3,5 @@ client/dist
 **/*.db
 **/*.db-*
 .env
-k8s
+deploy
+.github
