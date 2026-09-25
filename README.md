@@ -95,7 +95,7 @@ GitHub Actions の「Actions」タブから手動で実行します。
 
 | ワークフロー | 公開先 | 内容 |
 |---|---|---|
-| `publish-image` | `ghcr.io/num20/bbs` | 入力したバージョン（例: `0.1.0`）でイメージをビルド（linux/amd64, linux/arm64）。タグは `0.1.0` / `0.1` / `latest`（任意）/ `sha-xxxxxxx` |
+| `publish-image` | `ghcr.io/num20/bbs` | 入力したバージョン（例: `0.1.0`）でイメージをビルド（linux/amd64, linux/arm64）。タグは `0.1.0` / `0.1` / `latest`（任意）/ `sha-xxxxxxx`。バージョンに `edge` を指定すると `edge` / `sha-xxxxxxx` のみ |
 | `publish-chart` | `oci://ghcr.io/num20/charts/bbs` | `charts/bbs/Chart.yaml` の `version` でチャートを公開 |
 
 チャートを公開する前に、`Chart.yaml` の `appVersion` と同じバージョンのイメージを `publish-image` で公開しておいてください（`publish-chart` はイメージがない場合と、同じバージョンのチャートが公開済みの場合に失敗します）。
