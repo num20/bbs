@@ -17,7 +17,7 @@
       "binding": "DB",
       "database_name": "bbs",
       // wrangler d1 create bbs で表示される ID に置き換える
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "36eb0952-57c1-4a0a-afe4-8bee4d0bb982",
       "migrations_dir": "../server/migrations"
     }
   ],
