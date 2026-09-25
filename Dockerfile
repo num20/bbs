@@ -4,7 +4,6 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
 COPY client/package.json client/
-COPY worker/package.json worker/
 # better-sqlite3 はビルド済みバイナリを同梱しているので node-gyp（Python が必要）を走らせない
 RUN npm ci --ignore-scripts
 COPY client client
@@ -19,7 +18,6 @@ ENV NODE_ENV=production \
 COPY package.json package-lock.json ./
 COPY server/package.json server/
 COPY client/package.json client/
-COPY worker/package.json worker/
 RUN npm ci --omit=dev -w server --include-workspace-root=false --ignore-scripts \
  && npm cache clean --force \
  && mkdir -p /data && chown node:node /data
