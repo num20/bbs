@@ -1,0 +1,32 @@
+# kubectl apply -k k8s で適用します
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: bbs
+
+resources:
+  - namespace.yaml
+  - statefulset.yaml
+  - service.yaml
+
+# アプリのイメージ（クラスターから取得できる場所にプッシュして書き換えてください）
+images:
+  - name: bbs
+    newName: bbs
+    newTag: latest
+
+configMapGenerator:
+  # アプリと Litestream の設定値
+  - name: bbs-config
+    envs:
+      - config.env
+  # Litestream の設定ファイル
+  - name: litestream
+    files:
+      - litestream.yml
+
+secretGenerator:
+  # ソルトと S3 の認証情報（secret.env.example をコピーして作成）
+  - name: bbs-secret
+    envs:
+      - secret.env

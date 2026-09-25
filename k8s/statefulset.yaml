@@ -1,0 +1,117 @@
+# SQLite は 1 プロセスからしか書き込めないため、必ず replicas: 1 で動かします
+# 起動順: restore（S3 から復元）→ litestream（レプリケーション開始）→ bbs
+# 停止順: bbs → litestream（残りの WAL を送ってから終了）
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bbs
+spec:
+  replicas: 1
+  serviceName: bbs
+  selector:
+    matchLabels:
+      app: bbs
+  template:
+    metadata:
+      labels:
+        app: bbs
+    spec:
+      # node イメージの node ユーザー（UID 1000）に合わせる
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+        # PVC に DB がなく、S3 にレプリカがある場合だけ復元する
+        - name: restore
+          image: litestream/litestream:0.5.17
+          args: ["restore", "-if-db-not-exists", "-if-replica-exists", "/data/bbs.db"]
+          envFrom:
+            - configMapRef:
+                name: bbs-config
+          env: &litestream-credentials
+            - name: LITESTREAM_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: bbs-secret
+                  key: LITESTREAM_ACCESS_KEY_ID
+            - name: LITESTREAM_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: bbs-secret
+                  key: LITESTREAM_SECRET_ACCESS_KEY
+          volumeMounts: &litestream-mounts
+            - name: data
+              mountPath: /data
+            - name: litestream
+              mountPath: /etc/litestream.yml
+              subPath: litestream.yml
+        # サイドカー（restartPolicy: Always の initContainer、Kubernetes 1.29 以降）
+        - name: litestream
+          image: litestream/litestream:0.5.17
+          args: ["replicate"]
+          restartPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: bbs-config
+          env: *litestream-credentials
+          volumeMounts: *litestream-mounts
+          ports:
+            - name: metrics
+              containerPort: 9090
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+      containers:
+        - name: bbs
+          image: bbs
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BBS_TITLE
+              valueFrom:
+                configMapKeyRef:
+                  name: bbs-config
+                  key: BBS_TITLE
+            - name: BBS_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: bbs-secret
+                  key: BBS_SALT
+          ports:
+            - name: http
+              containerPort: 3000
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /api/config
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/config
+              port: http
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: litestream
+          configMap:
+            name: litestream
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

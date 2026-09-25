@@ -1,0 +1,14 @@
+services:
+  bbs:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      BBS_TITLE: ${BBS_TITLE:-なんでも掲示板＠あの頃}
+      BBS_SALT: ${BBS_SALT:-change-me-bbs-salt}
+    volumes:
+      - bbs-data:/data
+    restart: unless-stopped
+
+volumes:
+  bbs-data:

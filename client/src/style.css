@@ -1,0 +1,127 @@
+:root {
+  color-scheme: light;
+  --bg: #efefef;
+  --text: #000;
+  --link: #0000ff;
+  --visited: #660099;
+  --hover: #ff0000;
+  --accent: #ff0000;
+  --hr: #ccc;
+  --box-border: #999;
+  --header-bg: #ccffcc;
+  --menu-bg: #ffffee;
+  --form-bg: #ccffcc;
+  --marquee: #800000;
+  --name: #228b22;
+  --muted: #999;
+  --input-bg: #fff;
+  --input-text: #000;
+  --input-border: #eee;
+  --button-bg: #ddd;
+  --button-border: #ddd;
+}
+
+/* ダークモード: 深夜のテレホタイムに見ていた黒背景の個人サイト風 */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #000022;
+  --text: #d8d8d8;
+  --link: #66ccff;
+  --visited: #cc99ff;
+  --hover: #ff6666;
+  --accent: #ff6666;
+  --hr: #444466;
+  --box-border: #555577;
+  --header-bg: #002200;
+  --menu-bg: #1a1a0a;
+  --form-bg: #002200;
+  --marquee: #ffcc66;
+  --name: #66dd66;
+  --muted: #777799;
+  --input-bg: #111122;
+  --input-text: #e0e0e0;
+  --input-border: #333355;
+  --button-bg: #333344;
+  --button-border: #555566;
+}
+
+body {
+  margin: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "MS PGothic", "ＭＳ Ｐゴシック", "Osaka", "Hiragino Kaku Gothic ProN", sans-serif;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+a:link    { color: var(--link); }
+a:visited { color: var(--visited); }
+a:hover   { color: var(--hover); }
+
+h1 { color: var(--accent); font-size: 1.6em; margin: 4px 0; }
+hr { border: 0; border-top: 2px groove var(--hr); }
+.small { font-size: 12px; }
+.error { color: var(--accent); font-weight: bold; }
+
+.appearance {
+  margin: -4px 0 2px;
+  text-align: right;
+  color: var(--muted);
+  font-size: 11px;
+}
+.appearance a:link, .appearance a:visited { color: var(--muted); }
+.appearance a:hover { color: var(--hover); }
+.appearance b { color: var(--text); font-weight: normal; }
+
+.header-box, .menu-box, .form-box {
+  border: 1px outset var(--box-border);
+  margin-bottom: 1em;
+}
+.header-box { background: var(--header-bg); }
+.menu-box   { background: var(--menu-bg); }
+.form-box   { background: var(--form-bg); }
+
+.marquee { overflow: hidden; white-space: nowrap; color: var(--marquee); }
+.marquee span { display: inline-block; padding-left: 100%; animation: marquee 15s linear infinite; }
+@keyframes marquee { to { transform: translateX(-100%); } }
+
+.thread-list { margin: 0.5em 0; padding-left: 2em; }
+.thread-list li { margin: 2px 0; }
+
+.thread-title { color: var(--accent); font-size: 1.4em; font-weight: normal; margin: 0.5em 0; }
+.post { margin: 0 0 1em 0; }
+.post dt { margin: 0; }
+.post dd { margin: 0.2em 0 0 2.5em; word-break: break-all; }
+.name, .mail-name { color: var(--name); }
+a.mail-name { color: var(--link); }
+.trip { font-weight: normal; }
+.del { color: var(--muted) !important; text-decoration: none; }
+
+.post-form input, .post-form textarea {
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--input-text);
+  border: 2px inset var(--input-border);
+  background: var(--input-bg);
+}
+.post-form input[type="submit"] {
+  color: var(--text);
+  border: 2px outset var(--button-border);
+  background: var(--button-bg);
+  cursor: pointer;
+}
+.post-form input[type="submit"]:active { border-style: inset; }
+.post-form > div { margin: 4px 0; }
+.post-form textarea { max-width: 100%; }
+
+.footer { text-align: center; }
+.counter {
+  display: inline-block;
+  padding: 0 4px;
+  background: #000;
+  color: #0f0;
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  letter-spacing: 2px;
+  border: 2px inset #666;
+}

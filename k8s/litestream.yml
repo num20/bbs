@@ -1,0 +1,15 @@
+# ${VAR} は Litestream の起動時に環境変数（config.env）で置き換えられます
+# 認証情報は環境変数 LITESTREAM_ACCESS_KEY_ID / LITESTREAM_SECRET_ACCESS_KEY から読み込まれます
+
+# Prometheus メトリクス
+addr: ":9090"
+
+dbs:
+  - path: /data/bbs.db
+    replica:
+      type: s3
+      bucket: ${LITESTREAM_BUCKET}
+      path: bbs.db
+      region: ${LITESTREAM_REGION}
+      endpoint: ${LITESTREAM_ENDPOINT}
+      force-path-style: ${LITESTREAM_FORCE_PATH_STYLE}
