@@ -1,5 +1,5 @@
 # Helm チャートを oci://ghcr.io/<owner>/charts/bbs に公開する（Actions タブから手動で実行）
-# バージョンは deploy/helm/bbs/Chart.yaml の version / appVersion を使う
+# バージョンは charts/bbs/Chart.yaml の version / appVersion を使う
 name: publish-chart
 
 on:
@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 env:
-  CHART_DIR: deploy/helm/bbs
+  CHART_DIR: charts/bbs
 
 jobs:
   publish:

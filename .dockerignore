@@ -5,3 +5,4 @@ client/dist
 .env
 deploy
 .github
+charts

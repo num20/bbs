@@ -3,4 +3,4 @@ dist/
 *.db
 *.db-*
 .env
-deploy/kustomize/secret.env
+deploy/secret.env
