@@ -89,19 +89,6 @@ kubectl -n bbs delete pvc --wait=false data-bbs-0
 kubectl -n bbs delete pod bbs-0
 ```
 
-## イメージとチャートの公開
-
-GitHub Actions の「Actions」タブから手動で実行します。
-
-| ワークフロー | 公開先 | 内容 |
-|---|---|---|
-| `publish-image` | `ghcr.io/num20/bbs` | 入力したバージョン（例: `0.1.0`）でイメージをビルド（linux/amd64, linux/arm64）。タグは `0.1.0` / `0.1` / `latest`（任意）/ `sha-xxxxxxx`。バージョンに `edge` を指定すると `edge` / `sha-xxxxxxx` のみ |
-| `publish-chart` | `oci://ghcr.io/num20/charts/bbs` | `charts/bbs/Chart.yaml` の `version` でチャートを公開 |
-
-チャートを公開する前に、`Chart.yaml` の `appVersion` と同じバージョンのイメージを `publish-image` で公開しておいてください（`publish-chart` はイメージがない場合と、同じバージョンのチャートが公開済みの場合に失敗します）。
-
-初めて公開したパッケージは非公開になります。認証なしで取得できるようにするには、GitHub のパッケージの設定（Package settings → Change visibility）で公開に変更してください。
-
 ## 環境変数
 
 | 変数 | 既定値 | 説明 |

@@ -1,4 +1,8 @@
 # コンテナイメージを ghcr.io/<owner>/bbs に公開する（Actions タブから手動で実行）
+# linux/amd64, linux/arm64 でビルドし、次のタグを付ける
+#   version が semver（例: 0.1.0）: 0.1.0 / 0.1 / sha-xxxxxxx、latest にチェックを入れると latest も
+#   version が edge: edge / sha-xxxxxxx（latest は付けない）
+# 初めて公開したパッケージは非公開になる。認証なしで取得できるようにするには、GitHub の Package settings → Change visibility で公開に変更する
 name: publish-image
 
 on:
