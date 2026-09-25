@@ -9,8 +9,8 @@
 昔ながらの見た目のスレッド式 BBS（電子掲示板）です。
 
 - フロントエンド: React + Vite
-- バックエンド: Node.js + fastify
-- データベース: SQLite3（better-sqlite3）
+- バックエンド: Hono（Node.js または Cloudflare Workers）
+- データベース: SQLite3（Node.js は better-sqlite3、Workers は D1）
 
 ## 機能
 
@@ -95,6 +95,28 @@ kubectl -n bbs delete pvc --wait=false data-bbs-0
 kubectl -n bbs delete pod bbs-0
 ```
 
+## Cloudflare Workers で起動
+
+`worker/` に Workers + D1 の設定があります。API は Node.js 版と同じ `server/src/app.js` を使い、画面は `client/dist` を Static Assets で配信します。
+
+ローカルで試す（Cloudflare のアカウントは不要）:
+
+```sh
+cp worker/.dev.vars.example worker/.dev.vars   # ソルトを記入
+npm run dev:worker                             # http://localhost:8787
+```
+
+デプロイ:
+
+```sh
+npx wrangler login
+npx -w worker wrangler d1 create bbs           # 表示された database_id を worker/wrangler.jsonc に記入
+npx -w worker wrangler secret put BBS_SALT     # トリップと ID の生成に使うソルト
+npm run deploy:worker                          # クライアントのビルド、D1 のマイグレーション、デプロイ
+```
+
+掲示板名は `worker/wrangler.jsonc` の `vars.BBS_TITLE` で変更します。削除キーのハッシュ（scrypt）に CPU 時間を使うため、Workers Free プランの CPU 時間の上限（10ms）を超える場合があります。
+
 ## 環境変数
 
 | 変数 | 既定値 | 説明 |
@@ -134,7 +156,7 @@ BBS_TITLE='おスコーン愛好会' npm start
 
 ```
 .
-├── package.json        # npm workspaces（server / client）
+├── package.json        # npm workspaces（server / client / worker）
 ├── Dockerfile
 ├── LICENSE
 ├── compose.yaml
@@ -143,10 +165,15 @@ BBS_TITLE='おスコーン愛好会' npm start
 ├── charts/bbs/         # Helm チャート
 ├── deploy/             # Kustomize のマニフェスト
 ├── server/
+│   ├── migrations/     # テーブル定義（Node.js と D1 で共用）
 │   └── src/
-│       ├── index.js    # fastify サーバーと API
-│       ├── db.js       # SQLite 接続とスキーマ
+│       ├── app.js      # API（Hono、Node.js と Workers で共用）
+│       ├── index.js    # Node.js のサーバーと静的ファイルの配信
+│       ├── db.js       # SQLite 接続とマイグレーション（D1 と同じ API で包む）
 │       └── util.js     # トリップ・ID・削除キーの処理
+├── worker/
+│   ├── wrangler.jsonc  # Workers + D1 の設定
+│   └── src/index.js    # Workers のエントリ
 └── client/
     ├── index.html
     ├── vite.config.js

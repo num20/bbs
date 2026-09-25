@@ -1,36 +1,43 @@
 import Database from 'better-sqlite3';
+import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const dbPath = process.env.DB_PATH ?? fileURLToPath(new URL('../bbs.db', import.meta.url));
+const migrationsDir = new URL('../migrations/', import.meta.url);
 
-export const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+export const sqlite = new Database(dbPath);
+sqlite.pragma('journal_mode = WAL');
+sqlite.pragma('foreign_keys = ON');
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS threads (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    title      TEXT    NOT NULL,
-    created_at TEXT    NOT NULL,
-    bumped_at  TEXT    NOT NULL
-  );
-  CREATE TABLE IF NOT EXISTS posts (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    thread_id  INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
-    num        INTEGER NOT NULL,
-    name       TEXT    NOT NULL,
-    trip       TEXT,
-    email      TEXT    NOT NULL DEFAULT '',
-    body       TEXT    NOT NULL,
-    poster_id  TEXT    NOT NULL,
-    password   TEXT,
-    deleted    INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT    NOT NULL,
-    UNIQUE (thread_id, num)
-  );
-  CREATE TABLE IF NOT EXISTS counter (
-    id    INTEGER PRIMARY KEY CHECK (id = 1),
-    count INTEGER NOT NULL
-  );
-  INSERT OR IGNORE INTO counter (id, count) VALUES (1, 0);
-`);
+// migrations/ の SQL を未適用のものだけ順に適用（Workers では wrangler d1 migrations apply が適用する）
+sqlite.exec('CREATE TABLE IF NOT EXISTS migrations (name TEXT PRIMARY KEY, applied_at TEXT NOT NULL)');
+const applied = new Set(sqlite.prepare('SELECT name FROM migrations').pluck().all());
+for (const name of readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort()) {
+  if (applied.has(name)) continue;
+  sqlite.transaction(() => {
+    sqlite.exec(readFileSync(new URL(name, migrationsDir), 'utf8'));
+    sqlite.prepare('INSERT INTO migrations (name, applied_at) VALUES (?, ?)').run(name, new Date().toISOString());
+  })();
+}
+
+// better-sqlite3 を D1 と同じ API（prepare / bind / first / all / run / batch）で包む
+const statement = (sql, args = []) => {
+  const exec = () => {
+    const stmt = sqlite.prepare(sql);
+    if (stmt.reader) return { results: stmt.all(...args), meta: {} };
+    const { changes, lastInsertRowid } = stmt.run(...args);
+    return { results: [], meta: { changes, last_row_id: Number(lastInsertRowid) } };
+  };
+  return {
+    exec,
+    bind: (...values) => statement(sql, values),
+    first: async () => exec().results[0] ?? null,
+    all: async () => exec(),
+    run: async () => exec(),
+  };
+};
+
+export const db = {
+  prepare: (sql) => statement(sql),
+  batch: async (statements) => sqlite.transaction(() => statements.map((s) => s.exec()))(),
+};

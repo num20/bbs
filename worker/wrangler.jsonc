@@ -1,0 +1,28 @@
+// Cloudflare Workers + D1 の設定
+// API は server/src/app.js を共用し、画面は client/dist を Static Assets で配信する
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "bbs",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-25",
+  // server/src/util.js の node:crypto を使うため
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "../client/dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bbs",
+      // wrangler d1 create bbs で表示される ID に置き換える
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "../server/migrations"
+    }
+  ],
+  "vars": {
+    "BBS_TITLE": "なんでも掲示板＠あの頃"
+  }
+  // BBS_SALT は wrangler secret put BBS_SALT で設定する
+}

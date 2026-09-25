@@ -7,8 +7,8 @@
     "start": "NODE_ENV=production node --env-file-if-exists=../.env src/index.js"
   },
   "dependencies": {
-    "@fastify/static": "^10.1.4",
+    "@hono/node-server": "^2.1.1",
     "better-sqlite3": "^13.0.3",
-    "fastify": "^5.12.5"
+    "hono": "^4.13.9"
   }
 }

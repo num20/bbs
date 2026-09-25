@@ -6,3 +6,4 @@ client/dist
 deploy
 .github
 charts
+worker/.wrangler

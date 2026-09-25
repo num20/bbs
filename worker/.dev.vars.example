@@ -1,0 +1,3 @@
+# cp .dev.vars.example .dev.vars して値を変更してください（wrangler dev で読み込まれます）
+# トリップと ID の生成に使うソルト
+BBS_SALT=change-me-bbs-salt

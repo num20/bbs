@@ -4,12 +4,15 @@
   "license": "MIT",
   "workspaces": [
     "server",
-    "client"
+    "client",
+    "worker"
   ],
   "scripts": {
     "dev": "concurrently -n server,client -c blue,green \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client",
-    "start": "npm start -w server"
+    "start": "npm start -w server",
+    "dev:worker": "npm run build && npm run migrate:local -w worker && npm run dev -w worker",
+    "deploy:worker": "npm run build && npm run migrate -w worker && npm run deploy -w worker"
   },
   "devDependencies": {
     "concurrently": "^9.2.4"

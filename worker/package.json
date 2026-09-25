@@ -1,0 +1,17 @@
+{
+  "name": "bbs-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "migrate": "wrangler d1 migrations apply bbs --remote",
+    "migrate:local": "wrangler d1 migrations apply bbs --local"
+  },
+  "dependencies": {
+    "hono": "^4.13.9"
+  },
+  "devDependencies": {
+    "wrangler": "^4.140.0"
+  }
+}
