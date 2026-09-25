@@ -132,3 +132,13 @@ if (existsSync(dist)) {
 }
 
 await app.listen({ port: Number(process.env.PORT ?? 3000), host: '0.0.0.0' });
+
+// Docker / Kubernetes の停止シグナルで新しいリクエストの受付を止め、DB を閉じてから終了
+for (const signal of ['SIGTERM', 'SIGINT']) {
+  process.once(signal, async () => {
+    app.log.info(`${signal} を受信したため終了します`);
+    await app.close();
+    db.close();
+    process.exit(0);
+  });
+}
