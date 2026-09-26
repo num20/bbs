@@ -3,6 +3,8 @@
 [![publish-image](https://github.com/num20/bbs/actions/workflows/publish-image.yml/badge.svg)](https://github.com/num20/bbs/actions/workflows/publish-image.yml)
 [![publish-chart](https://github.com/num20/bbs/actions/workflows/publish-chart.yml/badge.svg)](https://github.com/num20/bbs/actions/workflows/publish-chart.yml)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/bbs)](https://artifacthub.io/packages/search?repo=bbs)
+[![Values schema](https://img.shields.io/badge/Values_schema-JSON_Schema-417598)](https://artifacthub.io/packages/helm/bbs/bbs?modal=values-schema)
+[![Signed](https://img.shields.io/badge/Signed-cosign-417598)](charts/bbs/README.md#verifying-the-chart-signature)
 ![Node.js](https://img.shields.io/badge/Node.js-%3E%3D24-5FA04E?logo=nodedotjs&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-%3E%3D1.29-326CE5?logo=kubernetes&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
