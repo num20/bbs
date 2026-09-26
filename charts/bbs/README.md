@@ -23,7 +23,7 @@ Since SQLite allows writes from only one process, the app runs as a single-repli
 The chart is published at `oci://ghcr.io/num20/charts/bbs`.
 
 ```sh
-helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.2 \
+helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.3 \
   --namespace bbs --create-namespace \
   --set litestream.s3.bucket=<bucket-name> \
   --set litestream.s3.accessKeyId=<access-key-id> \
@@ -37,7 +37,7 @@ Then open http://localhost:3000.
 For more settings, put them in a values file and pass it with `-f`.
 
 ```sh
-helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.2 \
+helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.3 \
   --namespace bbs --create-namespace -f my-values.yaml
 ```
 
@@ -50,7 +50,7 @@ helm install bbs charts/bbs --namespace bbs --create-namespace -f my-values.yaml
 To see the default values:
 
 ```sh
-helm show values oci://ghcr.io/num20/charts/bbs --version 0.1.2
+helm show values oci://ghcr.io/num20/charts/bbs --version 0.1.3
 ```
 
 ## Upgrading and uninstalling
