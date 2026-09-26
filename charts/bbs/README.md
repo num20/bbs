@@ -23,7 +23,7 @@ Since SQLite allows writes from only one process, the app runs as a single-repli
 The chart is published at `oci://ghcr.io/num20/charts/bbs`.
 
 ```sh
-helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.3 \
+helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.4 \
   --namespace bbs --create-namespace \
   --set litestream.s3.bucket=<bucket-name> \
   --set litestream.s3.accessKeyId=<access-key-id> \
@@ -37,7 +37,7 @@ Then open http://localhost:3000.
 For more settings, put them in a values file and pass it with `-f`.
 
 ```sh
-helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.3 \
+helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.4 \
   --namespace bbs --create-namespace -f my-values.yaml
 ```
 
@@ -50,8 +50,20 @@ helm install bbs charts/bbs --namespace bbs --create-namespace -f my-values.yaml
 To see the default values:
 
 ```sh
-helm show values oci://ghcr.io/num20/charts/bbs --version 0.1.3
+helm show values oci://ghcr.io/num20/charts/bbs --version 0.1.4
 ```
+
+## Verifying the chart signature
+
+Charts are signed with [Cosign](https://docs.sigstore.dev/cosign/) keyless signing in GitHub Actions. To verify a chart before installing it:
+
+```sh
+cosign verify ghcr.io/num20/charts/bbs:0.1.4 \
+  --certificate-identity-regexp '^https://github\.com/num20/bbs/\.github/workflows/publish-chart\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Charts up to 0.1.3 are not signed.
 
 ## Upgrading and uninstalling
 
@@ -181,6 +193,8 @@ kubectl -n bbs delete pod bbs-0
 ```
 
 ## Values
+
+Values are validated against [`values.schema.json`](values.schema.json) on `helm install`, `helm upgrade`, `helm lint`, and `helm template`, so typos in keys and values of the wrong type are rejected before anything is deployed.
 
 ### Image
 

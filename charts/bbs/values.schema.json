@@ -1,0 +1,240 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "bbs",
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "pullPolicy": {
+      "type": "string",
+      "enum": ["Always", "IfNotPresent", "Never"]
+    },
+    "object": {
+      "type": "object"
+    },
+    "stringMap": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "properties": {
+    "global": {
+      "description": "Global values shared with parent charts",
+      "type": "object"
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "description": "Application image",
+          "type": "string",
+          "minLength": 1
+        },
+        "tag": {
+          "description": "Image tag. Defaults to appVersion in Chart.yaml when empty",
+          "type": "string"
+        },
+        "pullPolicy": { "$ref": "#/definitions/pullPolicy" }
+      }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" }
+        }
+      }
+    },
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" },
+    "bbs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "description": "Board name",
+          "type": "string"
+        },
+        "salt": {
+          "description": "Salt used to generate trips and IDs. Auto-generated when empty",
+          "type": "string"
+        },
+        "existingSecret": {
+          "description": "Name of an existing Secret with the key BBS_SALT (takes precedence over bbs.salt)",
+          "type": "string"
+        }
+      }
+    },
+    "litestream": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "When disabled, the app runs on the PVC only",
+          "type": "boolean"
+        },
+        "image": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": { "type": "string", "minLength": 1 },
+            "tag": { "type": "string", "minLength": 1 },
+            "pullPolicy": { "$ref": "#/definitions/pullPolicy" }
+          }
+        },
+        "s3": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "bucket": {
+              "description": "Replication target bucket (required when Litestream is enabled)",
+              "type": "string"
+            },
+            "path": {
+              "description": "Path within the bucket",
+              "type": "string",
+              "minLength": 1
+            },
+            "region": {
+              "description": "Region (auto for R2)",
+              "type": "string"
+            },
+            "endpoint": {
+              "description": "Endpoint for S3-compatible storage",
+              "type": "string"
+            },
+            "forcePathStyle": {
+              "description": "Use path-style URLs (MinIO, etc.)",
+              "type": "boolean"
+            },
+            "accessKeyId": {
+              "description": "Access key ID. Leave empty when using IRSA or similar",
+              "type": "string"
+            },
+            "secretAccessKey": {
+              "description": "Secret access key (required when accessKeyId is set)",
+              "type": "string"
+            },
+            "existingSecret": {
+              "description": "Name of an existing Secret with the keys LITESTREAM_ACCESS_KEY_ID / LITESTREAM_SECRET_ACCESS_KEY",
+              "type": "string"
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "port": {
+              "description": "Port for Litestream metrics (Prometheus format)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            }
+          }
+        },
+        "resources": { "$ref": "#/definitions/object" }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "size": {
+          "description": "PVC size",
+          "type": "string",
+          "minLength": 1
+        },
+        "storageClass": {
+          "description": "Uses the cluster's default StorageClass when empty",
+          "type": "string"
+        }
+      }
+    },
+    "serviceAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": { "type": "boolean" },
+        "annotations": { "$ref": "#/definitions/stringMap" },
+        "name": {
+          "description": "Defaults to the fullname when empty",
+          "type": "string"
+        }
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"]
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "annotations": { "$ref": "#/definitions/stringMap" },
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["host", "paths"],
+            "properties": {
+              "host": { "type": "string" },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["path", "pathType"],
+                  "properties": {
+                    "path": { "type": "string" },
+                    "pathType": {
+                      "type": "string",
+                      "enum": ["Exact", "Prefix", "ImplementationSpecific"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "secretName": { "type": "string" },
+              "hosts": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "resources": { "$ref": "#/definitions/object" },
+    "podSecurityContext": { "$ref": "#/definitions/object" },
+    "securityContext": { "$ref": "#/definitions/object" },
+    "podAnnotations": { "$ref": "#/definitions/stringMap" },
+    "nodeSelector": { "$ref": "#/definitions/stringMap" },
+    "tolerations": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "affinity": { "$ref": "#/definitions/object" }
+  }
+}

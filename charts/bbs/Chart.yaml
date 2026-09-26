@@ -3,7 +3,7 @@ name: bbs
 description: A classic-looking threaded BBS (SQLite + Litestream)
 type: application
 # チャートのバージョン（変更したら上げる）
-version: 0.1.3
+version: 0.1.4
 # 既定で使うイメージのタグ
 appVersion: "0.1.0"
 # Litestream のサイドカーに restartPolicy: Always の initContainer を使うため
@@ -41,4 +41,6 @@ annotations:
   # このバージョンでの変更点
   artifacthub.io/changes: |
     - kind: added
-      description: Add an Artifact Hub badge to the repository README
+      description: Add values.schema.json to validate values
+    - kind: added
+      description: Sign the chart with Cosign keyless signing
