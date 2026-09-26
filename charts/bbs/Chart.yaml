@@ -3,7 +3,7 @@ name: bbs
 description: 昔ながらの見た目のスレッド式 BBS（SQLite + Litestream）
 type: application
 # チャートのバージョン（変更したら上げる）
-version: 0.1.0
+version: 0.1.1
 # 既定で使うイメージのタグ
 appVersion: "0.1.0"
 # Litestream のサイドカーに restartPolicy: Always の initContainer を使うため

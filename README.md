@@ -67,7 +67,7 @@ Kubernetes 1.29 以降（サイドカー用の `restartPolicy: Always` を使用
 ### Helm
 
 ```sh
-helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.0 \
+helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.1 \
   --namespace bbs --create-namespace \
   --set litestream.s3.bucket=<バケット名> \
   --set litestream.s3.accessKeyId=<アクセスキー> \
@@ -76,7 +76,7 @@ helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.0 \
 kubectl -n bbs port-forward svc/bbs 3000:80
 ```
 
-設定できる値は `charts/bbs/values.yaml` を参照してください。`bbs.salt` を指定しない場合は初回インストール時にランダムに生成され、以降のアップグレードでも同じ値が使われます。ローカルのチャートを使う場合は `oci://...` の代わりに `charts/bbs` を指定します。
+S3 互換ストレージや IRSA、既存の Secret、Ingress などの設定例と、設定できる値の一覧は [charts/bbs/README.md](charts/bbs/README.md) を参照してください。
 
 ### Kustomize
 
