@@ -1,0 +1,6 @@
+# Artifact Hub のリポジトリのメタデータ（https://artifacthub.io/docs/topics/repositories/helm-charts/）
+# Artifact Hub は git ではなく ghcr.io/num20/charts/bbs:artifacthub.io を読むため、変更したら oras で push する
+#   oras push ghcr.io/num20/charts/bbs:artifacthub.io \
+#     --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+#     artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
+repositoryID: 3fea5fd0-b056-4499-98e2-61f0b4385b39

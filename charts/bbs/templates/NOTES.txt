@@ -1,4 +1,4 @@
-{{ .Values.bbs.title }} をデプロイしました。
+{{ .Values.bbs.title }} has been deployed.
 
 {{- if .Values.ingress.enabled }}
 
@@ -13,5 +13,5 @@
 
 {{- if not .Values.litestream.enabled }}
 
-注意: Litestream が無効です。PVC を失うとデータも失われます。
+WARNING: Litestream is disabled. If the PVC is lost, your data will be lost too.
 {{- end }}

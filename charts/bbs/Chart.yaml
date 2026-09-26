@@ -1,9 +1,9 @@
 apiVersion: v2
 name: bbs
-description: 昔ながらの見た目のスレッド式 BBS（SQLite + Litestream）
+description: A classic-looking threaded BBS (SQLite + Litestream)
 type: application
 # チャートのバージョン（変更したら上げる）
-version: 0.1.1
+version: 0.1.2
 # 既定で使うイメージのタグ
 appVersion: "0.1.0"
 # Litestream のサイドカーに restartPolicy: Always の initContainer を使うため
@@ -11,3 +11,36 @@ kubeVersion: ">=1.29.0-0"
 home: https://github.com/num20/bbs
 sources:
   - https://github.com/num20/bbs
+keywords:
+  - bbs
+  - forum
+  - message-board
+  - sqlite
+  - litestream
+maintainers:
+  - name: num20
+    url: https://github.com/num20
+annotations:
+  # Artifact Hub 向けのメタデータ（https://artifacthub.io/docs/topics/annotations/helm/）
+  artifacthub.io/license: MIT
+  artifacthub.io/prerelease: "false"
+  artifacthub.io/containsSecurityUpdates: "false"
+  artifacthub.io/links: |
+    - name: Source
+      url: https://github.com/num20/bbs
+    - name: Chart source
+      url: https://github.com/num20/bbs/tree/main/charts/bbs
+    - name: Litestream
+      url: https://litestream.io/
+  # values.yaml のイメージを変えたらここも合わせる
+  artifacthub.io/images: |
+    - name: bbs
+      image: ghcr.io/num20/bbs:0.1.0
+    - name: litestream
+      image: litestream/litestream:0.5.17
+  # このバージョンでの変更点
+  artifacthub.io/changes: |
+    - kind: added
+      description: Add Artifact Hub metadata to Chart.yaml
+    - kind: changed
+      description: Translate README and NOTES into English

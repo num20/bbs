@@ -67,7 +67,7 @@ Kubernetes 1.29 以降（サイドカー用の `restartPolicy: Always` を使用
 ### Helm
 
 ```sh
-helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.1 \
+helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.2 \
   --namespace bbs --create-namespace \
   --set litestream.s3.bucket=<バケット名> \
   --set litestream.s3.accessKeyId=<アクセスキー> \

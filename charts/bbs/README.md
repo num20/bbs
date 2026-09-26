@@ -1,73 +1,73 @@
-# bbs Helm チャート
+# bbs Helm chart
 
-昔ながらの見た目のスレッド式 BBS（[num20/bbs](https://github.com/num20/bbs)）を Kubernetes にデプロイする Helm チャートです。
+A Helm chart that deploys a classic-looking threaded BBS ([num20/bbs](https://github.com/num20/bbs)) to Kubernetes.
 
-SQLite は 1 プロセスからしか書き込めないため、StatefulSet の 1 レプリカで動かし、[Litestream](https://litestream.io/) で DB を S3（または S3 互換ストレージ）へ常時レプリケートします。
+Since SQLite allows writes from only one process, the app runs as a single-replica StatefulSet, and [Litestream](https://litestream.io/) continuously replicates the database to S3 (or S3-compatible storage).
 
-| コンテナ | 種類 | 役割 |
+| Container | Kind | Role |
 | --- | --- | --- |
-| `restore` | initContainer | PVC に DB がなく S3 にレプリカがあれば復元 |
-| `litestream` | サイドカー（`restartPolicy: Always` の initContainer） | WAL を監視して S3 へ送信 |
-| `bbs` | コンテナ | アプリ本体（PVC の `/data/bbs.db` を使用） |
+| `restore` | initContainer | Restores the DB from S3 if the PVC has no DB and a replica exists |
+| `litestream` | Sidecar (initContainer with `restartPolicy: Always`) | Watches the WAL and ships changes to S3 |
+| `bbs` | Container | The application (uses `/data/bbs.db` on the PVC) |
 
-## 必要なもの
+## Prerequisites
 
-- Kubernetes 1.29 以降
-- Helm 3.8 以降（OCI レジストリからのインストールに必要）
-- S3 のバケット（または Cloudflare R2 などの S3 互換ストレージ）
-  - `litestream.enabled=false` にする場合は不要です
-- ReadWriteOnce の PVC を作れる StorageClass
+- Kubernetes 1.29+
+- Helm 3.8+ (required to install from an OCI registry)
+- An S3 bucket (or S3-compatible storage such as Cloudflare R2)
+  - Not required when `litestream.enabled=false`
+- A StorageClass that can provision ReadWriteOnce PVCs
 
-## インストール
+## Installation
 
-チャートは `oci://ghcr.io/num20/charts/bbs` に公開しています。
+The chart is published at `oci://ghcr.io/num20/charts/bbs`.
 
 ```sh
-helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.1 \
+helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.2 \
   --namespace bbs --create-namespace \
-  --set litestream.s3.bucket=<バケット名> \
-  --set litestream.s3.accessKeyId=<アクセスキー> \
-  --set litestream.s3.secretAccessKey=<シークレットキー>
+  --set litestream.s3.bucket=<bucket-name> \
+  --set litestream.s3.accessKeyId=<access-key-id> \
+  --set litestream.s3.secretAccessKey=<secret-access-key>
 
 kubectl -n bbs port-forward svc/bbs 3000:80
 ```
 
-http://localhost:3000 で開けます。
+Then open http://localhost:3000.
 
-設定が多い場合は values ファイルにまとめて `-f` で渡します。
+For more settings, put them in a values file and pass it with `-f`.
 
 ```sh
-helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.1 \
+helm install bbs oci://ghcr.io/num20/charts/bbs --version 0.1.2 \
   --namespace bbs --create-namespace -f my-values.yaml
 ```
 
-リポジトリを clone している場合は、`oci://...` の代わりにローカルのチャートを指定できます。
+If you have cloned the repository, you can use the local chart instead of `oci://...`.
 
 ```sh
 helm install bbs charts/bbs --namespace bbs --create-namespace -f my-values.yaml
 ```
 
-既定値の確認:
+To see the default values:
 
 ```sh
-helm show values oci://ghcr.io/num20/charts/bbs --version 0.1.1
+helm show values oci://ghcr.io/num20/charts/bbs --version 0.1.2
 ```
 
-## アップグレード・アンインストール
+## Upgrading and uninstalling
 
 ```sh
-helm upgrade bbs oci://ghcr.io/num20/charts/bbs --version <バージョン> \
+helm upgrade bbs oci://ghcr.io/num20/charts/bbs --version <version> \
   --namespace bbs --reuse-values
 
 helm uninstall bbs --namespace bbs
 ```
 
-- `helm uninstall` しても StatefulSet の PVC（`data-bbs-0`）は残ります。不要なら `kubectl -n bbs delete pvc data-bbs-0` で削除してください。
-- 自動生成したソルトを持つ Secret は `helm uninstall` で削除されます。再インストールするとソルトが変わり、ID とトリップの表示も変わります。ソルトを保ちたい場合は `bbs.salt` か `bbs.existingSecret` を指定してください（[ソルト](#ソルト)を参照）。
+- The StatefulSet's PVC (`data-bbs-0`) is kept after `helm uninstall`. If you no longer need it, delete it with `kubectl -n bbs delete pvc data-bbs-0`.
+- The Secret holding the auto-generated salt is deleted by `helm uninstall`. Reinstalling generates a new salt, which changes how IDs and trips are displayed. To keep the salt, set `bbs.salt` or `bbs.existingSecret` (see [Salt](#salt)).
 
-## 設定例
+## Examples
 
-### Amazon S3（アクセスキー）
+### Amazon S3 (access keys)
 
 ```yaml
 litestream:
@@ -78,9 +78,9 @@ litestream:
     secretAccessKey: ...
 ```
 
-### Amazon S3（IRSA）
+### Amazon S3 (IRSA)
 
-認証情報を空のままにし、ServiceAccount に IAM ロールを紐付けます。
+Leave the credentials empty and associate an IAM role with the ServiceAccount.
 
 ```yaml
 litestream:
@@ -105,19 +105,19 @@ litestream:
     secretAccessKey: ...
 ```
 
-MinIO など、パス形式の URL が必要なストレージでは `forcePathStyle: true` も指定します。
+For storage that requires path-style URLs, such as MinIO, also set `forcePathStyle: true`.
 
-### 既存の Secret を使う
+### Using existing Secrets
 
-認証情報を values に書きたくない場合は、先に Secret を作って名前を指定します。
+If you don't want to put credentials in your values, create the Secrets beforehand and reference them by name.
 
 ```sh
 kubectl -n bbs create secret generic bbs-salt \
   --from-literal=BBS_SALT="$(openssl rand -hex 16)"
 
 kubectl -n bbs create secret generic bbs-s3 \
-  --from-literal=LITESTREAM_ACCESS_KEY_ID=<アクセスキー> \
-  --from-literal=LITESTREAM_SECRET_ACCESS_KEY=<シークレットキー>
+  --from-literal=LITESTREAM_ACCESS_KEY_ID=<access-key-id> \
+  --from-literal=LITESTREAM_SECRET_ACCESS_KEY=<secret-access-key>
 ```
 
 ```yaml
@@ -130,7 +130,7 @@ litestream:
     existingSecret: bbs-s3
 ```
 
-### Ingress で公開する
+### Exposing via Ingress
 
 ```yaml
 bbs:
@@ -152,28 +152,28 @@ ingress:
         - bbs.example.com
 ```
 
-### Litestream を使わない
+### Running without Litestream
 
-お試し用です。PVC を失うとデータも失われます。
+For trying things out only. If the PVC is lost, your data is lost too.
 
 ```yaml
 litestream:
   enabled: false
 ```
 
-## ソルト
+## Salt
 
-トリップと ID は `BBS_SALT` から生成するため、ソルトが変わると同じ人の ID やトリップも変わります。
+Trips and IDs are derived from `BBS_SALT`, so changing the salt changes the IDs and trips of the same users.
 
-- `bbs.salt` を指定した場合: その値を使います。
-- `bbs.existingSecret` を指定した場合: その Secret のキー `BBS_SALT` を使います（`bbs.salt` より優先）。
-- どちらも指定しない場合: 初回インストール時にランダムに生成し、以降のアップグレードでは既存の Secret の値を使い続けます。
+- If `bbs.salt` is set: that value is used.
+- If `bbs.existingSecret` is set: the `BBS_SALT` key of that Secret is used (takes precedence over `bbs.salt`).
+- If neither is set: a random salt is generated on the first install, and the value in the existing Secret is reused on subsequent upgrades.
 
-自動生成は Helm の `lookup` で既存の Secret を読んで値を引き継いでいます。`helm template` や Argo CD のようにクラスターを参照せずにマニフェストを作る場合は、描画のたびに値が変わってしまうため、`bbs.salt` か `bbs.existingSecret` を指定してください。
+Auto-generation carries the value over by reading the existing Secret with Helm's `lookup`. When manifests are rendered without access to the cluster, as with `helm template` or Argo CD, the value changes on every render, so set `bbs.salt` or `bbs.existingSecret` instead.
 
-## S3 からの復元
+## Restoring from S3
 
-Pod の起動時、PVC に DB がなく S3 にレプリカがあれば、`restore` が自動で復元します。動作を確かめるには、PVC と Pod を削除します。
+When the Pod starts, if the PVC has no DB and a replica exists in S3, the `restore` container restores it automatically. To try it out, delete the PVC and the Pod.
 
 ```sh
 kubectl -n bbs delete pvc --wait=false data-bbs-0
@@ -182,73 +182,73 @@ kubectl -n bbs delete pod bbs-0
 
 ## Values
 
-### イメージ
+### Image
 
-| キー | 既定値 | 説明 |
+| Key | Default | Description |
 | --- | --- | --- |
-| `image.repository` | `ghcr.io/num20/bbs` | アプリのイメージ |
-| `image.tag` | `""` | イメージのタグ。空なら Chart.yaml の `appVersion` |
+| `image.repository` | `ghcr.io/num20/bbs` | Application image |
+| `image.tag` | `""` | Image tag. Defaults to `appVersion` in Chart.yaml when empty |
 | `image.pullPolicy` | `IfNotPresent` | |
 | `imagePullSecrets` | `[]` | |
 | `nameOverride` | `""` | |
 | `fullnameOverride` | `""` | |
 
-### アプリ
+### Application
 
-| キー | 既定値 | 説明 |
+| Key | Default | Description |
 | --- | --- | --- |
-| `bbs.title` | `なんでも掲示板＠あの頃` | 掲示板名 |
-| `bbs.salt` | `""` | トリップと ID の生成に使うソルト。空なら自動生成（[ソルト](#ソルト)を参照） |
-| `bbs.existingSecret` | `""` | キー `BBS_SALT` を持つ既存の Secret の名前（`bbs.salt` より優先） |
+| `bbs.title` | `なんでも掲示板＠あの頃` | Board name |
+| `bbs.salt` | `""` | Salt used to generate trips and IDs. Auto-generated when empty (see [Salt](#salt)) |
+| `bbs.existingSecret` | `""` | Name of an existing Secret with the key `BBS_SALT` (takes precedence over `bbs.salt`) |
 
 ### Litestream
 
-| キー | 既定値 | 説明 |
+| Key | Default | Description |
 | --- | --- | --- |
-| `litestream.enabled` | `true` | 無効にすると PVC だけで動かす |
+| `litestream.enabled` | `true` | When disabled, the app runs on the PVC only |
 | `litestream.image.repository` | `litestream/litestream` | |
 | `litestream.image.tag` | `0.5.17` | |
 | `litestream.image.pullPolicy` | `IfNotPresent` | |
-| `litestream.s3.bucket` | `""` | レプリケーション先のバケット（有効時は必須） |
-| `litestream.s3.path` | `bbs.db` | バケット内のパス |
-| `litestream.s3.region` | `us-east-1` | リージョン（R2 は `auto`） |
-| `litestream.s3.endpoint` | `""` | S3 互換ストレージのエンドポイント |
-| `litestream.s3.forcePathStyle` | `false` | パス形式の URL を使う（MinIO など） |
-| `litestream.s3.accessKeyId` | `""` | アクセスキー。IRSA などを使う場合は空 |
-| `litestream.s3.secretAccessKey` | `""` | シークレットキー（`accessKeyId` を指定したら必須） |
-| `litestream.s3.existingSecret` | `""` | キー `LITESTREAM_ACCESS_KEY_ID` / `LITESTREAM_SECRET_ACCESS_KEY` を持つ既存の Secret の名前 |
-| `litestream.metrics.port` | `9090` | Litestream のメトリクス（Prometheus 形式）のポート |
-| `litestream.resources` | requests: `cpu: 10m`, `memory: 32Mi` / limits: `memory: 128Mi` | サイドカーのリソース |
+| `litestream.s3.bucket` | `""` | Replication target bucket (required when enabled) |
+| `litestream.s3.path` | `bbs.db` | Path within the bucket |
+| `litestream.s3.region` | `us-east-1` | Region (`auto` for R2) |
+| `litestream.s3.endpoint` | `""` | Endpoint for S3-compatible storage |
+| `litestream.s3.forcePathStyle` | `false` | Use path-style URLs (MinIO, etc.) |
+| `litestream.s3.accessKeyId` | `""` | Access key ID. Leave empty when using IRSA or similar |
+| `litestream.s3.secretAccessKey` | `""` | Secret access key (required when `accessKeyId` is set) |
+| `litestream.s3.existingSecret` | `""` | Name of an existing Secret with the keys `LITESTREAM_ACCESS_KEY_ID` / `LITESTREAM_SECRET_ACCESS_KEY` |
+| `litestream.metrics.port` | `9090` | Port for Litestream metrics (Prometheus format) |
+| `litestream.resources` | requests: `cpu: 10m`, `memory: 32Mi` / limits: `memory: 128Mi` | Sidecar resources |
 
-### ストレージ
+### Storage
 
-| キー | 既定値 | 説明 |
+| Key | Default | Description |
 | --- | --- | --- |
-| `persistence.size` | `1Gi` | PVC のサイズ |
-| `persistence.storageClass` | `""` | 空ならクラスターの既定の StorageClass |
+| `persistence.size` | `1Gi` | PVC size |
+| `persistence.storageClass` | `""` | Uses the cluster's default StorageClass when empty |
 
-### ServiceAccount・Service・Ingress
+### ServiceAccount, Service, and Ingress
 
-| キー | 既定値 | 説明 |
+| Key | Default | Description |
 | --- | --- | --- |
-| `serviceAccount.create` | `true` | ServiceAccount を作る |
-| `serviceAccount.annotations` | `{}` | IRSA などで使う注釈 |
-| `serviceAccount.name` | `""` | 空なら fullname |
+| `serviceAccount.create` | `true` | Create a ServiceAccount |
+| `serviceAccount.annotations` | `{}` | Annotations, e.g. for IRSA |
+| `serviceAccount.name` | `""` | Defaults to the fullname when empty |
 | `service.type` | `ClusterIP` | |
 | `service.port` | `80` | |
 | `ingress.enabled` | `false` | |
 | `ingress.className` | `""` | |
 | `ingress.annotations` | `{}` | |
-| `ingress.hosts` | `bbs.example.com` の `/` | ホストとパス |
+| `ingress.hosts` | `/` on `bbs.example.com` | Hosts and paths |
 | `ingress.tls` | `[]` | |
 
 ### Pod
 
-| キー | 既定値 | 説明 |
+| Key | Default | Description |
 | --- | --- | --- |
-| `resources` | requests: `cpu: 50m`, `memory: 64Mi` / limits: `memory: 256Mi` | アプリのリソース |
-| `podSecurityContext` | `runAsUser: 1000`, `runAsGroup: 1000`, `fsGroup: 1000` | node イメージの node ユーザーに合わせる |
-| `securityContext` | `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]` | アプリと Litestream のコンテナに適用 |
+| `resources` | requests: `cpu: 50m`, `memory: 64Mi` / limits: `memory: 256Mi` | Application resources |
+| `podSecurityContext` | `runAsUser: 1000`, `runAsGroup: 1000`, `fsGroup: 1000` | Matches the `node` user of the node image |
+| `securityContext` | `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]` | Applied to the application and Litestream containers |
 | `podAnnotations` | `{}` | |
 | `nodeSelector` | `{}` | |
 | `tolerations` | `[]` | |
